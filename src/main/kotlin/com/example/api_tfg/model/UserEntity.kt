@@ -7,7 +7,7 @@ import java.util.Date
 @Document("Users")
 data class UserEntity(
     @BsonId
-    val _id: String, //email
+    val id: String, //email
     val name: String,
     var username: String,
     var password: String,

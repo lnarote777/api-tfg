@@ -1,4 +1,4 @@
-package com.example.api_tfg.model
+    package com.example.api_tfg.model
 
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document

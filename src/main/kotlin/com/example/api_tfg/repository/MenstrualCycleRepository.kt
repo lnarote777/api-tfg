@@ -5,5 +5,7 @@ import org.springframework.data.mongodb.repository.MongoRepository
 import org.springframework.stereotype.Repository
 
 @Repository
-interface MenstrualCycleRepository: MongoRepository<MenstrualCycle, Int> {
+interface MenstrualCycleRepository: MongoRepository<MenstrualCycle, String> {
+    fun findByUserId(userId: String): List<MenstrualCycle>
+    fun findTopByUserIdOrderByStartDateDesc(userId: String): MenstrualCycle?
 }

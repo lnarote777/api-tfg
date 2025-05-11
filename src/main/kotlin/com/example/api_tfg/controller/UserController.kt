@@ -67,6 +67,15 @@ class UserController {
         return ResponseEntity(users, HttpStatus.OK )
     }
 
+    @GetMapping("/{username}")
+    fun getUserByUsername(
+        @PathVariable username: String,
+        httpRequest: HttpServletRequest
+    ): ResponseEntity<UserDTO> {
+        val user = userService.getUserByUsername(username)
+        return ResponseEntity(user, HttpStatus.OK)
+    }
+
     @DeleteMapping("/delete/{email}")
     fun deleteByEmail(
         @PathVariable email: String,

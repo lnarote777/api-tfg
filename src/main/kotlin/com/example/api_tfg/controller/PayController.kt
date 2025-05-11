@@ -1,10 +1,12 @@
 package com.example.api_tfg.controller
 
 import com.example.api_tfg.model.Subscription
+import com.example.api_tfg.model.SubscriptionType
 import com.stripe.Stripe
 import com.stripe.model.checkout.Session
 import com.stripe.param.checkout.SessionCreateParams
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -20,28 +22,32 @@ class PayController(
     @Value("\${frontend.cancel.url}")
     private val cancelUrl: String
 ) {
+
+    @Value("\${stripe.price.monthly}")
+    private lateinit var monthlyPriceId: String
+
+    @Value("\${stripe.price.one_time}")
+    private lateinit var oneTimePriceId: String
+
     init {
         Stripe.apiKey = stripeSecretKey
     }
     @PostMapping("/create-subscription")
-    fun createSubscription(@RequestBody request: Subscription): Map<String, String> {
-        val (email, type) = request
+    fun createSubscription(@RequestBody request: Subscription): ResponseEntity<Map<String, String>>{
 
-        val priceId = when (type) {
-            "monthly" -> "price_monthly_id" // ID de Stripe para suscripción mensual
-            "one_time" -> "price_one_time_id" // ID de Stripe para pago único
-            else -> throw IllegalArgumentException("Tipo de suscripción inválido")
+        val priceId = when (request.type) {
+            SubscriptionType.MONTHLY -> monthlyPriceId // ID de Stripe para suscripción mensual
+            SubscriptionType.ONE_TIME -> oneTimePriceId // ID de Stripe para pago único
         }
 
-        val mode = when (type) {
-            "monthly" -> SessionCreateParams.Mode.SUBSCRIPTION
-            "one_time" -> SessionCreateParams.Mode.PAYMENT
-            else -> throw IllegalArgumentException("Tipo de suscripción inválido")
+        val mode = when (request.type) {
+            SubscriptionType.MONTHLY -> SessionCreateParams.Mode.SUBSCRIPTION
+            SubscriptionType.ONE_TIME -> SessionCreateParams.Mode.PAYMENT
         }
 
         val params = SessionCreateParams.builder()
             .setMode(mode)
-            .setCustomerEmail(email)
+            .setCustomerEmail(request.email)
             .setSuccessUrl(successUrl)
             .setCancelUrl(cancelUrl)
             .addLineItem(
@@ -53,7 +59,7 @@ class PayController(
             .build()
 
         val session = Session.create(params)
-        return mapOf("url" to session.url)
+        return ResponseEntity.ok(mapOf("url" to session.url))
     }
 }
 

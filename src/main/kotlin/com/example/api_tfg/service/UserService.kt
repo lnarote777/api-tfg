@@ -65,6 +65,12 @@ class UserService: UserDetailsService {
         return usersDTO
     }
 
+    fun getUserByUsername(username: String): UserDTO {
+        val user = userRepository.findByUsername(username).orElseThrow{BadRequestException("$username-- no existente")}
+        val userDTO = DTOMapper.userEntityToDTO(user)
+        return userDTO
+    }
+
     fun deleteUser(email: String): UserDTO {
         val user = userRepository.findUserBy_id(email).orElseThrow{ NotFoundException("No se encontró al usuario con email $email.") }
         userRepository.delete(user)

@@ -39,7 +39,7 @@ class SecurityConfig {
                 .requestMatchers("/users/register", "/users/login").permitAll() // Público
 
                 //Otros
-                .anyRequest().authenticated()
+                .anyRequest().permitAll()
 
             } // Los recursos protegidos y publicos
             .oauth2ResourceServer { oauth2 -> oauth2.jwt(Customizer.withDefaults()) }
@@ -61,7 +61,6 @@ class SecurityConfig {
     fun authenticationManager(authenticationConfiguration: AuthenticationConfiguration) : AuthenticationManager {
         return authenticationConfiguration.authenticationManager
     }
-
 
     /*
     MÉTODO PARA CODIFICAR UN JWT
