@@ -9,7 +9,7 @@ data class DailyLog(
     @BsonId
     val id: String? = null,                       // MongoDB ID
     val userId: String,                           // Reference to the user
-    val date: LocalDate,                          // Log date
+    val date: String,                          // Log date
     val hasMenstruation: Boolean = false,
     val menstrualFlow: MenstrualFlowLevel? = null,
     val sexualActivity: List<String> = emptyList(),  // e.g., "Intercourse", "Desire", "Masturbation"

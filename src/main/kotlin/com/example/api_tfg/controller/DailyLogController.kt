@@ -1,22 +1,34 @@
 package com.example.api_tfg.controller
 
 import com.example.api_tfg.dto.DailyLogDTO
+import com.example.api_tfg.error.exception.NotFoundException
 import com.example.api_tfg.model.DailyLog
+import com.example.api_tfg.repository.DailyLogRepository
 import com.example.api_tfg.service.DailyLogService
+import com.example.api_tfg.service.UserService
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.format.annotation.DateTimeFormat
+import org.springframework.http.HttpStatus
+import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.*
 import java.time.LocalDate
 
 @Controller
 @RequestMapping("/daily-log")
-class DailyLogController(
-    private val dailyLogService: DailyLogService
-) {
+class DailyLogController {
 
-    @PostMapping("/{userId}")
-    fun createLog(@PathVariable userId: String, @RequestBody dto: DailyLogDTO): DailyLog {
-        return dailyLogService.createLog(userId, dto)
+    @Autowired
+    private lateinit var dailyLogService: DailyLogService
+
+    @Autowired
+    private lateinit var userService: UserService
+
+    @PostMapping("/new/{email}")
+    fun createLog(@PathVariable email: String, @RequestBody dto: DailyLogDTO): ResponseEntity<DailyLog> {
+        val user = userService.getUserByEmail(email)
+        val log = dailyLogService.createLog(user.email, dto)
+        return ResponseEntity(log, HttpStatus.CREATED)
     }
 
     @GetMapping
@@ -32,7 +44,7 @@ class DailyLogController(
     @GetMapping("/user/{userId}/date/{date}")
     fun getLogByDate(
         @PathVariable userId: String,
-        @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) date: LocalDate
+        @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) date: String
     ): DailyLog? {
         return dailyLogService.getLogByUserAndDate(userId, date)
     }
@@ -42,9 +54,14 @@ class DailyLogController(
         return dailyLogService.getLogById(id)
     }
 
-    @PutMapping("/{id}")
-    fun updateLog(@PathVariable id: String, @RequestBody log: DailyLogDTO): DailyLog? {
-        return dailyLogService.updateLog(id, log)
+    @PutMapping("/user/{userId}/date/{date}")
+    fun updateLog(
+        @PathVariable userId: String,
+        @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) date: String,
+        @RequestBody dto: DailyLogDTO
+    ): DailyLog? {
+        val log = dailyLogService.getLogByUserAndDate(userId, date)
+        return log.id?.let { dailyLogService.updateLog(it, dto) }
     }
 
     @DeleteMapping("/{id}")

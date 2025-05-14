@@ -9,6 +9,7 @@ import com.nimbusds.jose.proc.SecurityContext
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.http.HttpMethod
 import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.config.Customizer
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration
@@ -36,9 +37,19 @@ class SecurityConfig {
         return http
             .csrf { csrf -> csrf.disable() } // Cross-Site Forgery
             .authorizeHttpRequests { auth -> auth
+                // Users
                 .requestMatchers("/users/register", "/users/login").permitAll() // Público
 
-                //Otros
+                // Daily Log
+                .requestMatchers(HttpMethod.GET,"/daily-log/new/{email}").authenticated()
+
+                //Cycle
+                .requestMatchers(HttpMethod.POST,"/cycle/new").authenticated()
+                .requestMatchers(HttpMethod.GET,"/cycle/user/{email}").authenticated()
+                .requestMatchers(HttpMethod.GET,"/daily-log/new/{email}").authenticated()
+                .requestMatchers(HttpMethod.GET,"/daily-log/new/{email}").authenticated()
+
+                // Otros
                 .anyRequest().permitAll()
 
             } // Los recursos protegidos y publicos

@@ -16,19 +16,17 @@ class MenstrualCycleService {
     private lateinit var menstrualCycleRepository: MenstrualCycleRepository
 
     fun createCycle(cycleDTO: MenstrualCycleDTO): MenstrualCycle {
-        val phases = generatePhasesForCycle(cycleDTO.startDate, cycleDTO.cycleLength, cycleDTO.bleedingDuration)
-        val endDate = cycleDTO.startDate.plusDays(cycleDTO.cycleLength.toLong() - 1)
+        val startDate = LocalDate.parse(cycleDTO.startDate)
+        val endDate = startDate.plusDays(cycleDTO.cycleLength.toLong() - 1)
+        val phases = generatePhasesForCycle(startDate, cycleDTO.cycleLength, cycleDTO.bleedingDuration)
 
         val cycle = MenstrualCycle(
             userId = cycleDTO.userId,
-            startDate = cycleDTO.startDate,
-            endDate = endDate,
+            startDate = startDate.toString(),
+            endDate = endDate.toString(),
             cycleLength = cycleDTO.cycleLength,
             bleedingDuration = cycleDTO.bleedingDuration,
             averageFlow = cycleDTO.averageFlow,
-            symptoms = cycleDTO.symptoms,
-            moodChanges = cycleDTO.moodChanges,
-            notes = cycleDTO.notes,
             isPredicted = cycleDTO.isPredicted,
             phases = phases
         )
@@ -43,22 +41,20 @@ class MenstrualCycleService {
     fun predictNextCycle(email: String): MenstrualCycle {
         val lastCycle = menstrualCycleRepository.findTopByUserIdOrderByStartDateDesc(email)
             ?: throw NotFoundException("No hay ciclos previos para el usuario con $email")
-
-
-        val nextStartDate = lastCycle.startDate.plusDays(lastCycle.cycleLength.toLong())
+        val lastStartDate = LocalDate.parse(lastCycle.startDate)
+        val nextStartDate = lastStartDate.plusDays(lastCycle.cycleLength.toLong())
         val nextEndDate = nextStartDate.plusDays(lastCycle.bleedingDuration.toLong() - 1)
+        val phases = generatePhasesForCycle(nextStartDate, lastCycle.cycleLength, lastCycle.bleedingDuration)
 
         val predictedCycle = MenstrualCycle(
             userId = email,
-            startDate = nextStartDate,
-            endDate = nextEndDate,
+            startDate = nextStartDate.toString(),
+            endDate = nextEndDate.toString(),
             cycleLength = lastCycle.cycleLength,
             bleedingDuration = lastCycle.bleedingDuration,
             averageFlow = lastCycle.averageFlow,
-            symptoms = emptyList(),
-            moodChanges = emptyList(),
-            notes = null,
-            isPredicted = true
+            isPredicted = true,
+            phases = phases
         )
 
         return menstrualCycleRepository.save(predictedCycle)
@@ -75,7 +71,7 @@ class MenstrualCycleService {
                 i == 14 -> CyclePhase.OVULATION
                 else -> CyclePhase.LUTEAL
             }
-            phases.add(CyclePhaseDay(date, phase))
+            phases.add(CyclePhaseDay(date.toString(), phase))
         }
 
         return phases
@@ -87,22 +83,20 @@ class MenstrualCycleService {
                 .orElseThrow { NotFoundException("Ciclo con id ${cycle.id} no encontrado.") }
         }
 
-        val endDate = cycle.startDate.plusDays(cycle.cycleLength.toLong() - 1)
-        val phases = generatePhasesForCycle(cycle.startDate, cycle.cycleLength, cycle.bleedingDuration)
+        val startDate = LocalDate.parse(cycle.startDate)
+        val endDate = startDate.plusDays(cycle.cycleLength.toLong() - 1)
+        val phases = generatePhasesForCycle(startDate, cycle.cycleLength, cycle.bleedingDuration)
 
         val updatedCycle = existing!!.copy(
-            startDate = cycle.startDate,
-            endDate = endDate,
+            startDate = startDate.toString(),
+            endDate = endDate.toString(),
             cycleLength = cycle.cycleLength,
             bleedingDuration = cycle.bleedingDuration,
             averageFlow = cycle.averageFlow,
-            symptoms = cycle.symptoms,
-            moodChanges = cycle.moodChanges,
-            notes = cycle.notes,
             isPredicted = cycle.isPredicted,
+            logs = cycle.logs,
             phases = phases
         )
-
         return menstrualCycleRepository.save(updatedCycle)
     }
 

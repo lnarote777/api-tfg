@@ -4,7 +4,7 @@ import com.example.api_tfg.model.MenstrualFlowLevel
 import java.time.LocalDate
 
 data class DailyLogDTO(
-    val date: LocalDate,
+    val date: String,
     val hasMenstruation: Boolean = false,
     val menstrualFlow: MenstrualFlowLevel? = null,
     val sexualActivity: List<String> = emptyList(),

@@ -10,12 +10,13 @@ import java.time.LocalDate
 
 @Service
 class DailyLogService {
+
     @Autowired
     private lateinit var dailyLogRepository: DailyLogRepository
 
     fun createLog(userId: String, dto: DailyLogDTO): DailyLog {
         val existing = dailyLogRepository.findByUserIdAndDate(userId, dto.date)
-        if (existing != null) throw IllegalArgumentException("Ya hay un log para ese día.")
+        if (existing.isPresent  ) throw IllegalArgumentException("Ya hay un log para ese día.")
 
         val log = DailyLog(
             userId = userId,
@@ -43,9 +44,8 @@ class DailyLogService {
         return dailyLogRepository.findByUserId(userId)
     }
 
-    fun getLogByUserAndDate(userId: String, date: LocalDate): DailyLog {
-        return dailyLogRepository.findByUserIdAndDate(userId, date)
-            ?: throw NotFoundException("No se encontró log p ara el usuario $userId en $date")
+    fun getLogByUserAndDate(userId: String, date: String): DailyLog {
+        return dailyLogRepository.findByUserIdAndDate(userId, date).orElseThrow { NotFoundException("No se encontró log p ara el usuario $userId en $date") }
     }
 
     fun getLogById(id: String): DailyLog {

@@ -3,6 +3,7 @@ package com.example.api_tfg.controller
 import com.example.api_tfg.dto.MenstrualCycleDTO
 import com.example.api_tfg.model.MenstrualCycle
 import com.example.api_tfg.service.MenstrualCycleService
+import jakarta.servlet.http.HttpServletRequest
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -16,14 +17,15 @@ class MenstrualCycleController {
     private lateinit var cycleService: MenstrualCycleService
 
     @PostMapping("/new")
-    fun createCycle(@RequestBody cycleInsert: MenstrualCycleDTO): ResponseEntity<MenstrualCycle> {
+    fun createCycle(@RequestBody cycleInsert: MenstrualCycleDTO,httpRequest: HttpServletRequest): ResponseEntity<MenstrualCycle> {
         val cycle = cycleService.createCycle(cycleInsert)
         return ResponseEntity(cycle, HttpStatus.CREATED)
     }
 
     @GetMapping("/user/{email}")
-    fun getCyclesByUser(@PathVariable email: String): List<MenstrualCycle> {
-        return cycleService.getCyclesByUserEmail(email)
+    fun getCyclesByUser(@PathVariable email: String, httpRequest: HttpServletRequest): ResponseEntity<List<MenstrualCycle>> {
+        val cycles = cycleService.getCyclesByUserEmail(email)
+        return ResponseEntity(cycles, HttpStatus.OK)
     }
 
 
