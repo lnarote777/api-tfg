@@ -44,10 +44,7 @@ class SecurityConfig {
                 .requestMatchers(HttpMethod.GET,"/daily-log/new/{email}").authenticated()
 
                 //Cycle
-                .requestMatchers(HttpMethod.POST,"/cycle/new").authenticated()
-                .requestMatchers(HttpMethod.GET,"/cycle/user/{email}").authenticated()
-                .requestMatchers(HttpMethod.GET,"/daily-log/new/{email}").authenticated()
-                .requestMatchers(HttpMethod.GET,"/daily-log/new/{email}").authenticated()
+                .requestMatchers(HttpMethod.POST,"/cycle/new").permitAll()
 
                 // Otros
                 .anyRequest().permitAll()

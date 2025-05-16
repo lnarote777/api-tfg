@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.*
+import java.time.LocalDate
 
 @Controller
 @RequestMapping("/cycles")
@@ -43,5 +44,16 @@ class MenstrualCycleController {
     @DeleteMapping("/{id}")
     fun deleteCycle(@PathVariable id: String): Boolean {
         return cycleService.deleteCycle(id)
+    }
+
+    @GetMapping("/recalculate/{userId}")
+    fun recalculateCycle(
+        @PathVariable userId: String,
+        @RequestParam(required = false) date: String?
+    ): ResponseEntity<MenstrualCycle> {
+        val today = date?.let { LocalDate.parse(it) } ?: LocalDate.now()
+        val cycle = cycleService.recalculateCycleIfNoBleeding(userId, today)
+            ?: return ResponseEntity.notFound().build()
+        return ResponseEntity(cycle, HttpStatus.OK)
     }
 }

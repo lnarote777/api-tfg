@@ -4,6 +4,7 @@ import com.example.api_tfg.dto.MenstrualCycleDTO
 import com.example.api_tfg.error.exception.NotFoundException
 import com.example.api_tfg.model.CyclePhase
 import com.example.api_tfg.model.CyclePhaseDay
+import com.example.api_tfg.model.DailyLog
 import com.example.api_tfg.model.MenstrualCycle
 import com.example.api_tfg.repository.MenstrualCycleRepository
 import org.springframework.beans.factory.annotation.Autowired
@@ -111,5 +112,41 @@ class MenstrualCycleService {
             return false
         }
 
+    }
+    fun recalculateCycleIfNoBleeding(userId: String, today: LocalDate): MenstrualCycle? {
+        val userCycles = menstrualCycleRepository.findByUserId(userId)
+            .sortedByDescending { it.startDate }
+
+        val currentCycle = userCycles.find {
+            val start = LocalDate.parse(it.startDate)
+            val end = LocalDate.parse(it.endDate)
+            !it.isPredicted && today in start..end
+        } ?: return null
+
+        val hasBleeding = currentCycle.logs.any {
+            LocalDate.parse(it.date) == today && it.hasMenstruation
+        }
+
+        if (hasBleeding) return currentCycle // No se recalcula si hay sangrado
+
+        // Recalcular fechas
+        val newStart = today.minusDays(currentCycle.cycleLength.toLong())
+        val newEnd = newStart.plusDays(currentCycle.cycleLength.toLong() - 1)
+
+        val newPhases = generatePhasesForCycle(
+            newStart,
+            currentCycle.cycleLength,
+            currentCycle.bleedingDuration
+        )
+
+        val updatedCycle = currentCycle.copy(
+            startDate = newStart.toString(),
+            endDate = newEnd.toString(),
+            phases = newPhases,
+            isPredicted = true
+        )
+
+        menstrualCycleRepository.save(updatedCycle)
+        return updatedCycle
     }
 }
