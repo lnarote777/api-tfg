@@ -76,9 +76,9 @@ class UserController {
         return ResponseEntity(user, HttpStatus.OK)
     }
 
-    @DeleteMapping("/delete/{email}")
+    @DeleteMapping("/delete")
     fun deleteByEmail(
-        @PathVariable email: String,
+        @RequestParam email: String,
         httpRequest: HttpServletRequest
     ) : ResponseEntity<UserDTO>? {
         val user = userService.deleteUser(email)

@@ -84,11 +84,10 @@ class UserService: UserDetailsService {
 
     fun updateUser(userInsertDTO: UserUpdateDTO): UserDTO {
         val user: UserEntity = userRepository.findUserBy_id(userInsertDTO.email).orElseThrow { NotFoundException("No se encontró al usuario con email ${userInsertDTO.email}.") }
-        user.password = passwordEncoder.encode(userInsertDTO.password)
+        val encode = passwordEncoder.encode(userInsertDTO.password)
+        user.password = if (userInsertDTO.password.isNotBlank() && userInsertDTO.password != user.password) encode else user.password
         user.username = userInsertDTO.username
         user.goal = userInsertDTO.goal
-        user.height = userInsertDTO.height
-        user.weight = userInsertDTO.weight
         userRepository.save(user)
         val userDTO = DTOMapper.userEntityToDTO(user)
         return userDTO

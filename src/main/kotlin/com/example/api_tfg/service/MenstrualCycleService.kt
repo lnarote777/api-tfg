@@ -117,29 +117,22 @@ class MenstrualCycleService {
         val userCycles = menstrualCycleRepository.findByUserId(userId)
             .sortedByDescending { it.startDate }
 
-        val currentCycle = userCycles.find {
-            val start = LocalDate.parse(it.startDate)
-            val end = LocalDate.parse(it.endDate)
-            !it.isPredicted && today in start..end
-        } ?: return null
+        val lastCycle = userCycles.firstOrNull() ?: return null
 
-        val hasBleeding = currentCycle.logs.any {
+        val hasBleedingToday = lastCycle.logs.any {
             LocalDate.parse(it.date) == today && it.hasMenstruation
         }
-
-        if (hasBleeding) return currentCycle // No se recalcula si hay sangrado
-
-        // Recalcular fechas
-        val newStart = today.minusDays(currentCycle.cycleLength.toLong())
-        val newEnd = newStart.plusDays(currentCycle.cycleLength.toLong() - 1)
+        
+        val newStart = if (hasBleedingToday) today else today.plusDays(1)
+        val newEnd = newStart.plusDays(lastCycle.cycleLength.toLong() - 1)
 
         val newPhases = generatePhasesForCycle(
             newStart,
-            currentCycle.cycleLength,
-            currentCycle.bleedingDuration
+            lastCycle.cycleLength,
+            lastCycle.bleedingDuration
         )
 
-        val updatedCycle = currentCycle.copy(
+        val updatedCycle = lastCycle.copy(
             startDate = newStart.toString(),
             endDate = newEnd.toString(),
             phases = newPhases,
