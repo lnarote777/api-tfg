@@ -29,12 +29,14 @@ class PayController(
     @Value("\${stripe.price.one_time}")
     private lateinit var oneTimePriceId: String
 
+
     init {
         Stripe.apiKey = stripeSecretKey
     }
     @PostMapping("/create-subscription")
     fun createSubscription(@RequestBody request: Subscription): ResponseEntity<Map<String, String>>{
-
+        println("Success URL: $successUrl")
+        println("Cancel URL: $cancelUrl")
         val priceId = when (request.type) {
             SubscriptionType.MONTHLY -> monthlyPriceId // ID de Stripe para suscripción mensual
             SubscriptionType.ONE_TIME -> oneTimePriceId // ID de Stripe para pago único
