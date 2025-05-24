@@ -119,11 +119,25 @@ class MenstrualCycleService {
 
         val lastCycle = userCycles.firstOrNull() ?: return null
 
-        val hasBleedingToday = lastCycle.logs.any {
-            LocalDate.parse(it.date) == today && it.hasMenstruation
+        // ⚠ Verificar si hoy o ayer ya tienen sangrado real
+        val hasRecentBleeding = lastCycle.logs.any {
+            val logDate = LocalDate.parse(it.date)
+            (logDate == today || logDate == today.minusDays(1)) && it.hasMenstruation
         }
-        
-        val newStart = if (hasBleedingToday) today else today.plusDays(1)
+
+        if (hasRecentBleeding) {
+            return null // No recalcular si ya hay sangrado real
+        }
+
+        // ⚠ Verificar si hoy ya está dentro de un ciclo actual
+        val todayInCurrentCycle = today.isAfter(LocalDate.parse(lastCycle.startDate).minusDays(1)) &&
+                today.isBefore(LocalDate.parse(lastCycle.endDate).plusDays(1))
+
+        if (todayInCurrentCycle && !lastCycle.isPredicted) {
+            return null // Ya hay un ciclo real que abarca hoy, no recalcular
+        }
+
+        val newStart = today.plusDays(1)
         val newEnd = newStart.plusDays(lastCycle.cycleLength.toLong() - 1)
 
         val newPhases = generatePhasesForCycle(
@@ -132,14 +146,16 @@ class MenstrualCycleService {
             lastCycle.bleedingDuration
         )
 
-        val updatedCycle = lastCycle.copy(
+        val newCycle = lastCycle.copy(
+            id = null,
             startDate = newStart.toString(),
             endDate = newEnd.toString(),
             phases = newPhases,
-            isPredicted = true
+            isPredicted = true,
+            logs = emptyList() // Asegúrate de que esté vacío si es predicción
         )
 
-        menstrualCycleRepository.save(updatedCycle)
-        return updatedCycle
+        return menstrualCycleRepository.save(newCycle)
     }
+
 }

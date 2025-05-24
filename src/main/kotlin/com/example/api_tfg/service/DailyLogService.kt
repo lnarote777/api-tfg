@@ -14,6 +14,9 @@ class DailyLogService {
     @Autowired
     private lateinit var dailyLogRepository: DailyLogRepository
 
+    @Autowired
+    private lateinit var menstrualCycleService: MenstrualCycleService
+
     fun createLog(userId: String, dto: DailyLogDTO): DailyLog {
         val existing = dailyLogRepository.findByUserIdAndDate(userId, dto.date)
         if (existing.isPresent  ) throw IllegalArgumentException("Ya hay un log para ese día.")
@@ -33,7 +36,16 @@ class DailyLogService {
             weight = dto.weight,
             notes = dto.notes
         )
-        return dailyLogRepository.save(log)
+
+        val savedLog = dailyLogRepository.save(log)
+
+        // Recalcular solo si no hay sangrado
+        if (!dto.hasMenstruation) {
+            val parsedDate = LocalDate.parse(dto.date)
+            menstrualCycleService.recalculateCycleIfNoBleeding(userId, parsedDate)
+        }
+
+        return savedLog
     }
 
     fun getAllLogs(): List<DailyLog> {
