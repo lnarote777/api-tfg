@@ -43,6 +43,8 @@ dependencies {
 	//Stripe (Pago)
 	implementation("com.stripe:stripe-java:24.0.0")
 
+	implementation("com.google.code.gson:gson:2.10.1")
+
 }
 
 kotlin {
