@@ -25,7 +25,8 @@ object DTOMapper {
         return UserDTO(
             email = user._id,
             username = user.username,
-            name = user.name
+            name = user.name,
+            goal = user.goal
         )
     }
 
