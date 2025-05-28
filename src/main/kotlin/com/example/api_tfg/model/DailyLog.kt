@@ -7,18 +7,18 @@ import java.time.LocalDate
 @Document("DailyLog")
 data class DailyLog(
     @BsonId
-    val id: String? = null,                       // MongoDB ID
-    val userId: String,                           // Reference to the user
-    val date: String,                          // Log date
+    val id: String? = null,
+    val userId: String,
+    val date: String,
     val hasMenstruation: Boolean = false,
     val menstrualFlow: MenstrualFlowLevel? = null,
-    val sexualActivity: List<String> = emptyList(),  // e.g., "Intercourse", "Desire", "Masturbation"
-    val mood: List<String> = emptyList(),            // e.g., "Happy", "Irritable", "Sad"
-    val symptoms: List<String> = emptyList(),        // e.g., "Cramps", "Headache"
-    val vaginalDischarge: List<String> = emptyList(),// e.g., "Clear", "Sticky", "Creamy"
-    val physicalActivity: List<String> = emptyList(),// e.g., "Yoga", "Running"
-    val pillsTaken: List<String> = emptyList(),      // e.g., "Painkiller", "Contraceptive"
-    val waterIntake: Double? = null,              // Liters of water (e.g., 1.5)
-    val weight: Double? = null,                   // Weight in kg
+    val sexualActivity:  MutableList<String?> = mutableListOf(),
+    val mood:  MutableList<String?> = mutableListOf(),
+    val symptoms:  MutableList<String?> = mutableListOf(),
+    val vaginalDischarge: MutableList<String?> = mutableListOf(),
+    val physicalActivity: MutableList<String?> = mutableListOf(),
+    val pillsTaken:  MutableList<String?> = mutableListOf(),
+    val waterIntake: Double? = null,
+    val weight: Double? = null,
     val notes: String? = null
 )

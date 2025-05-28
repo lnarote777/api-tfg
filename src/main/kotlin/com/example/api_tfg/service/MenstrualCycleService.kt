@@ -119,7 +119,7 @@ class MenstrualCycleService {
 
         val lastCycle = userCycles.firstOrNull() ?: return null
 
-        // ⚠ Verificar si hoy o ayer ya tienen sangrado real
+        //Verificar si hoy o ayer ya tienen sangrado real
         val hasRecentBleeding = lastCycle.logs.any {
             val logDate = LocalDate.parse(it.date)
             (logDate == today || logDate == today.minusDays(1)) && it.hasMenstruation
@@ -129,7 +129,7 @@ class MenstrualCycleService {
             return null // No recalcular si ya hay sangrado real
         }
 
-        // ⚠ Verificar si hoy ya está dentro de un ciclo actual
+
         val todayInCurrentCycle = today.isAfter(LocalDate.parse(lastCycle.startDate).minusDays(1)) &&
                 today.isBefore(LocalDate.parse(lastCycle.endDate).plusDays(1))
 

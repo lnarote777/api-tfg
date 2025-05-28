@@ -1,9 +1,7 @@
 package com.example.api_tfg.controller
 
 import com.example.api_tfg.dto.DailyLogDTO
-import com.example.api_tfg.error.exception.NotFoundException
 import com.example.api_tfg.model.DailyLog
-import com.example.api_tfg.repository.DailyLogRepository
 import com.example.api_tfg.service.DailyLogService
 import com.example.api_tfg.service.UserService
 import org.springframework.beans.factory.annotation.Autowired
@@ -12,7 +10,9 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.*
-import java.time.LocalDate
+import java.net.URLDecoder
+import java.nio.charset.StandardCharsets
+
 
 @Controller
 @RequestMapping("/daily-log")
@@ -37,8 +37,11 @@ class DailyLogController {
     }
 
     @GetMapping("/user/{userId}")
-    fun getLogsByUser(@PathVariable userId: String): List<DailyLog> {
-        return dailyLogService.getLogsByUser(userId)
+    fun getLogsByUser(@PathVariable userId: String): ResponseEntity<List<DailyLog>> {
+        val decodedEmail: String = URLDecoder.decode(userId, StandardCharsets.UTF_8)
+        println(decodedEmail)
+        val logs = dailyLogService.getLogsByUser(decodedEmail)
+        return ResponseEntity(logs, HttpStatus.OK)
     }
 
     @GetMapping("/user/{userId}/date/{date}")
