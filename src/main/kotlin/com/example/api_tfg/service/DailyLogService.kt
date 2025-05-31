@@ -66,25 +66,31 @@ class DailyLogService {
     }
 
 
-    fun updateLog(id: String, dto: DailyLogDTO): DailyLog {
+    fun updateLog(id: String, dto: DailyLogDTO): DailyLog? {
         val existing = dailyLogRepository.findById(id)
-            .orElseThrow { NotFoundException("Log con id $id no encontrado") }
 
-        val updated = existing.copy(
-            date = dto.date,
-            hasMenstruation = dto.hasMenstruation,
-            menstrualFlow = dto.menstrualFlow,
-            sexualActivity = dto.sexualActivity,
-            mood = dto.mood,
-            symptoms = dto.symptoms,
-            vaginalDischarge = dto.vaginalDischarge,
-            physicalActivity = dto.physicalActivity,
-            pillsTaken = dto.pillsTaken,
-            waterIntake = dto.waterIntake,
-            weight = dto.weight,
-            notes = dto.notes
-        )
-        return dailyLogRepository.save(updated)
+        if (existing.isPresent) {
+            val existingLog = existing.get()
+            val updated = existingLog.copy(
+                date = dto.date,
+                hasMenstruation = dto.hasMenstruation,
+                menstrualFlow = dto.menstrualFlow,
+                sexualActivity = dto.sexualActivity,
+                mood = dto.mood,
+                symptoms = dto.symptoms,
+                vaginalDischarge = dto.vaginalDischarge,
+                physicalActivity = dto.physicalActivity,
+                pillsTaken = dto.pillsTaken,
+                waterIntake = dto.waterIntake,
+                weight = dto.weight,
+                notes = dto.notes
+            )
+            return dailyLogRepository.save(updated)
+        }else{
+            return null
+        }
+
+
     }
 
     fun deleteLog(id: String) {

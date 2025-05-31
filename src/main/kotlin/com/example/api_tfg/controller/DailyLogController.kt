@@ -48,8 +48,9 @@ class DailyLogController {
     fun getLogByDate(
         @PathVariable userId: String,
         @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) date: String
-    ): DailyLog? {
-        return dailyLogService.getLogByUserAndDate(userId, date)
+    ): ResponseEntity<DailyLog> {
+        val log = dailyLogService.getLogByUserAndDate(userId, date)
+        return ResponseEntity(log, HttpStatus.OK)
     }
 
     @GetMapping("/{id}")
@@ -62,9 +63,10 @@ class DailyLogController {
         @PathVariable userId: String,
         @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) date: String,
         @RequestBody dto: DailyLogDTO
-    ): DailyLog? {
+    ): ResponseEntity<DailyLog?> {
         val log = dailyLogService.getLogByUserAndDate(userId, date)
-        return log.id?.let { dailyLogService.updateLog(it, dto) }
+        val update = log.id?.let { dailyLogService.updateLog(it, dto) }
+        return ResponseEntity(update, HttpStatus.OK)
     }
 
     @DeleteMapping("/{id}")
