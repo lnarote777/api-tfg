@@ -11,7 +11,7 @@ data class UserEntity(
     val name: String,
     var username: String,
     var password: String,
-    var roles: String, //Premium or user
+    var roles: String = "USER", //Premium or user
     val birthDate: String,
     val registrationDate: Date,
     var weight: Double,

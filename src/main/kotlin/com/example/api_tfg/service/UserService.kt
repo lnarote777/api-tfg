@@ -11,6 +11,7 @@ import com.example.api_tfg.error.exception.UserExistException
 import com.example.api_tfg.model.UserEntity
 import com.example.api_tfg.repository.UserRepository
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.userdetails.User
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.core.userdetails.UserDetailsService
@@ -32,9 +33,12 @@ class UserService: UserDetailsService {
                 UnauthorizedException("$username-+ no existente")
             }
 
+        val authorities = listOf(SimpleGrantedAuthority("ROLE_${user.roles.uppercase()}"))
+
         return User.builder()
             .username(user.username)
             .password(user.password)
+            .authorities(authorities)
             .build()
     }
 
