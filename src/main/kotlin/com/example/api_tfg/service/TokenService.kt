@@ -25,7 +25,7 @@ class TokenService {
         val payload: JwtClaimsSet = JwtClaimsSet.builder()
             .issuer("self")
             .issuedAt(Instant.now())
-            .expiresAt(Date().toInstant().plus(Duration.ofHours(1)))
+            .expiresAt(Date().toInstant().plus(Duration.ofDays(365)))
             .subject(authentication.name)
             .claim("roles", roles)
             .build()
