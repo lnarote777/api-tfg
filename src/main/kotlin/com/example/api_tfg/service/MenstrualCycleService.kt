@@ -39,26 +39,41 @@ class MenstrualCycleService {
         return menstrualCycleRepository.findByUserId(email)
     }
 
-    fun predictNextCycle(email: String): MenstrualCycle {
+    fun predictNextCycle(email: String): MutableList<MenstrualCycle?> {
+        deletePredictedCyclesForUser(email)
         val lastCycle = menstrualCycleRepository.findTopByUserIdOrderByStartDateDesc(email)
             ?: throw NotFoundException("No hay ciclos previos para el usuario con $email")
-        val lastStartDate = LocalDate.parse(lastCycle.startDate)
-        val nextStartDate = lastStartDate.plusDays(lastCycle.cycleLength.toLong())
-        val nextEndDate = nextStartDate.plusDays(lastCycle.bleedingDuration.toLong() - 1)
-        val phases = generatePhasesForCycle(nextStartDate, lastCycle.cycleLength, lastCycle.bleedingDuration)
 
-        val predictedCycle = MenstrualCycle(
-            userId = email,
-            startDate = nextStartDate.toString(),
-            endDate = nextEndDate.toString(),
-            cycleLength = lastCycle.cycleLength,
-            bleedingDuration = lastCycle.bleedingDuration,
-            averageFlow = lastCycle.averageFlow,
-            isPredicted = true,
-            phases = phases
-        )
+        val predictedCycles = mutableListOf<MenstrualCycle>()
 
-        return menstrualCycleRepository.save(predictedCycle)
+        var baseStartDate = LocalDate.parse(lastCycle.startDate)
+
+        for (i in 1..6) {
+            val nextStartDate = baseStartDate.plusDays(lastCycle.cycleLength.toLong())
+            val nextEndDate = nextStartDate.plusDays(lastCycle.cycleLength.toLong() - 1)
+
+            val phases = generatePhasesForCycle(
+                nextStartDate,
+                lastCycle.cycleLength,
+                lastCycle.bleedingDuration
+            )
+
+            val predictedCycle = MenstrualCycle(
+                userId = email,
+                startDate = nextStartDate.toString(),
+                endDate = nextEndDate.toString(),
+                cycleLength = lastCycle.cycleLength,
+                bleedingDuration = lastCycle.bleedingDuration,
+                averageFlow = lastCycle.averageFlow,
+                isPredicted = true,
+                phases = phases
+            )
+
+            predictedCycles.add(predictedCycle)
+            baseStartDate = nextStartDate
+        }
+
+        return menstrualCycleRepository.saveAll(predictedCycles)
     }
 
     fun generatePhasesForCycle(startDate: LocalDate, cycleLength: Int, bleedingDuration: Int): List<CyclePhaseDay> {
@@ -119,16 +134,11 @@ class MenstrualCycleService {
 
         val lastCycle = userCycles.firstOrNull() ?: return null
 
-        //Verificar si hoy o ayer ya tienen sangrado real
+        // Verificar si hoy o ayer tienen sangrado real
         val hasRecentBleeding = lastCycle.logs.any {
             val logDate = LocalDate.parse(it.date)
             (logDate == today || logDate == today.minusDays(1)) && it.hasMenstruation
         }
-
-        if (hasRecentBleeding) {
-            return null // No recalcular si ya hay sangrado real
-        }
-
 
         val todayInCurrentCycle = today.isAfter(LocalDate.parse(lastCycle.startDate).minusDays(1)) &&
                 today.isBefore(LocalDate.parse(lastCycle.endDate).plusDays(1))
@@ -137,7 +147,10 @@ class MenstrualCycleService {
             return null // Ya hay un ciclo real que abarca hoy, no recalcular
         }
 
-        val newStart = today.plusDays(1)
+        deletePredictedCyclesForUser(userId)
+
+        // Si hay sangrado hoy o ayer, empieza hoy, si no, empieza mañana
+        val newStart = if (hasRecentBleeding) today else today.plusDays(1)
         val newEnd = newStart.plusDays(lastCycle.cycleLength.toLong() - 1)
 
         val newPhases = generatePhasesForCycle(
@@ -152,10 +165,16 @@ class MenstrualCycleService {
             endDate = newEnd.toString(),
             phases = newPhases,
             isPredicted = true,
-            logs = emptyList() // Asegúrate de que esté vacío si es predicción
+            logs = emptyList() // Vacío si es predicción
         )
 
         return menstrualCycleRepository.save(newCycle)
+    }
+
+    fun deletePredictedCyclesForUser(userId: String) {
+        val predicted = menstrualCycleRepository.findByUserId(userId)
+            .filter { it.isPredicted }
+        menstrualCycleRepository.deleteAll(predicted)
     }
 
 }

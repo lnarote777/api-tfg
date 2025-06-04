@@ -31,7 +31,7 @@ class MenstrualCycleController {
 
 
     @GetMapping("/user/{email}/prediction")
-    fun getPrediction(@PathVariable email: String): ResponseEntity<MenstrualCycle> {
+    fun getPrediction(@PathVariable email: String): ResponseEntity<MutableList<MenstrualCycle?>> {
         val prediction = cycleService.predictNextCycle(email)
         return ResponseEntity(prediction, HttpStatus.OK)
     }
