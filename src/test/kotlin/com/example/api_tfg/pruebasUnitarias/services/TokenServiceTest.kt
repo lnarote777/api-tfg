@@ -35,22 +35,17 @@ class TokenServiceTest {
         every { authority1.authority } returns "ROLE_USER"
         every { authority2.authority } returns "ROLE_ADMIN"
 
-        // Capturar los parámetros
         val paramsSlot = slot<JwtEncoderParameters>()
         val mockJwt = mockk<Jwt>()
         every { mockJwt.tokenValue } returns "mocked.jwt.token"
 
-        // Configurar correctamente el mock antes de llamar al método
         every { jwtEncoder.encode(capture(paramsSlot)) } returns mockJwt
 
-        // Llamar al método
         val token = tokenService.generarToken(auth)
 
-        // Validaciones
         assertEquals("mocked.jwt.token", token)
         verify(exactly = 1) { jwtEncoder.encode(any()) }
 
-        // Validar claims
         val claimsSet = paramsSlot.captured.claims
         assertEquals("user@example.com", claimsSet.subject)
         assertEquals("self",claimsSet.getClaim("iss"))
