@@ -32,11 +32,12 @@ class DailyLogController {
     }
 
     @GetMapping
-    fun getAllLogs(): List<DailyLog> {
-        return dailyLogService.getAllLogs()
+    fun getAllLogs(): ResponseEntity<List<DailyLog>> {
+        val logs = dailyLogService.getAllLogs()
+        return ResponseEntity(logs, HttpStatus.OK)
     }
 
-    @GetMapping("/user/{userId}")
+        @GetMapping("/user/{userId}")
     fun getLogsByUser(@PathVariable userId: String): ResponseEntity<List<DailyLog>> {
         val decodedEmail: String = URLDecoder.decode(userId, StandardCharsets.UTF_8)
         println(decodedEmail)
@@ -54,8 +55,9 @@ class DailyLogController {
     }
 
     @GetMapping("/{id}")
-    fun getLogById(@PathVariable id: String): DailyLog {
-        return dailyLogService.getLogById(id)
+    fun getLogById(@PathVariable id: String): ResponseEntity<DailyLog> {
+        val log = dailyLogService.getLogById(id)
+        return ResponseEntity(log, HttpStatus.OK)
     }
 
     @PutMapping("/user/{userId}/date/{date}")

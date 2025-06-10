@@ -15,7 +15,6 @@ data class UserEntity(
     val birthDate: String,
     val registrationDate: Date,
     var weight: Double,
-    var height: Double,
     var goal: Goal
 )
 

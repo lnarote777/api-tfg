@@ -43,8 +43,9 @@ class MenstrualCycleController {
     }
 
     @DeleteMapping("/{id}")
-    fun deleteCycle(@PathVariable id: String): Boolean {
-        return cycleService.deleteCycle(id)
+    fun deleteCycle(@PathVariable id: String): ResponseEntity<Boolean> {
+        val deleted = cycleService.deleteCycle(id)
+        return ResponseEntity.ok(deleted)
     }
 
     @GetMapping("/recalculate/{userId}")

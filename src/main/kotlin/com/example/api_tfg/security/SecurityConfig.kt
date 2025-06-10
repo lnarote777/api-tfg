@@ -18,10 +18,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
-import org.springframework.security.oauth2.jwt.JwtDecoder
-import org.springframework.security.oauth2.jwt.JwtEncoder
-import org.springframework.security.oauth2.jwt.NimbusJwtDecoder
-import org.springframework.security.oauth2.jwt.NimbusJwtEncoder
+import org.springframework.security.oauth2.jwt.*
 import org.springframework.security.web.SecurityFilterChain
 
 @Configuration
@@ -85,7 +82,9 @@ class SecurityConfig {
      */
     @Bean
     fun jwtDecoder(): JwtDecoder {
-        return NimbusJwtDecoder.withPublicKey(rsaKeys.publicKey).build()
+        val decoder = NimbusJwtDecoder.withJwkSetUri("dummy").build()
+        decoder.setJwtValidator(JwtValidators.createDefaultWithIssuer("self"))
+        return decoder
     }
 
 

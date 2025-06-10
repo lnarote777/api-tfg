@@ -16,7 +16,6 @@ object DTOMapper {
             goal = userDTO.goal,
             roles = "USER",
             weight = 0.0,
-            height = 0.0,
             registrationDate = Date.from(Instant.now())
         )
     }

@@ -21,16 +21,11 @@ import org.springframework.web.bind.annotation.*
 
 @Controller
 @RequestMapping("/users")
-class UserController {
-
-    @Autowired
-    private lateinit var authenticationManager: AuthenticationManager
-
-    @Autowired
-    private lateinit var tokenService: TokenService
-
-    @Autowired
-    private lateinit var userService: UserService
+class UserController(
+    private val authenticationManager: AuthenticationManager,
+    private val tokenService: TokenService,
+    private val userService: UserService
+) {
 
     @PostMapping("/login")
     fun login(@RequestBody user: UserLoginDTO?) : ResponseEntity<Any>? {

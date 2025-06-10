@@ -11,10 +11,9 @@ import java.time.Instant
 import java.util.*
 
 @Service
-class TokenService {
-
-    @Autowired
-    private lateinit var jwtEncoder: JwtEncoder
+class TokenService(
+    @Autowired val jwtEncoder: JwtEncoder
+) {
 
     fun generarToken(authentication: Authentication) : String {
 

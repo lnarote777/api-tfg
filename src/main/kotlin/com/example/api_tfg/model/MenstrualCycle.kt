@@ -6,7 +6,7 @@ import org.springframework.data.mongodb.core.mapping.Document
 @Document("MenstrualCycle")
 data class MenstrualCycle(
     @BsonId
-    val id: String? = null,
+    var id: String? = null,
     val userId: String,
     val startDate: String,
     val endDate: String,

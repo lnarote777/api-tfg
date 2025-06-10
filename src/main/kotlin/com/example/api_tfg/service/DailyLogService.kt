@@ -9,13 +9,10 @@ import org.springframework.stereotype.Service
 import java.time.LocalDate
 
 @Service
-class DailyLogService {
-
-    @Autowired
-    private lateinit var dailyLogRepository: DailyLogRepository
-
-    @Autowired
-    private lateinit var menstrualCycleService: MenstrualCycleService
+class DailyLogService(
+    @Autowired val dailyLogRepository: DailyLogRepository,
+    @Autowired val menstrualCycleService: MenstrualCycleService
+) {
 
     fun createLog(userId: String, dto: DailyLogDTO): DailyLog {
         val existing = dailyLogRepository.findByUserIdAndDate(userId, dto.date)

@@ -19,12 +19,10 @@ import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 
 @Service
-class UserService: UserDetailsService {
-    @Autowired
-    private lateinit var passwordEncoder: PasswordEncoder
-
-    @Autowired
-    private lateinit var userRepository: UserRepository
+class UserService(
+    private val userRepository: UserRepository,
+    private val passwordEncoder: PasswordEncoder
+): UserDetailsService {
 
     override fun loadUserByUsername(username: String?): UserDetails {
         val user: UserEntity = userRepository
@@ -87,14 +85,18 @@ class UserService: UserDetailsService {
     }
 
     fun updateUser(userInsertDTO: UserUpdateDTO): UserDTO {
-        val user: UserEntity = userRepository.findUserBy_id(userInsertDTO.email).orElseThrow { NotFoundException("No se encontró al usuario con email ${userInsertDTO.email}.") }
-        val encode = passwordEncoder.encode(userInsertDTO.password)
-        user.password = if (userInsertDTO.password.isNotBlank() && userInsertDTO.password != user.password) encode else user.password
+        val user: UserEntity = userRepository.findUserBy_id(userInsertDTO.email)
+            .orElseThrow { NotFoundException("No se encontró al usuario con email ${userInsertDTO.email}.") }
+
+        if (userInsertDTO.password.isNotBlank() && userInsertDTO.password != user.password) {
+            user.password = passwordEncoder.encode(userInsertDTO.password)
+        }
+
         user.username = userInsertDTO.username
         user.goal = userInsertDTO.goal
+
         userRepository.save(user)
-        val userDTO = DTOMapper.userEntityToDTO(user)
-        return userDTO
+        return DTOMapper.userEntityToDTO(user)
     }
 
 
