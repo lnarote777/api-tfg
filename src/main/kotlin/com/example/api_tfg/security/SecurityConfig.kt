@@ -35,13 +35,30 @@ class SecurityConfig {
             .csrf { csrf -> csrf.disable() } // Cross-Site Forgery
             .authorizeHttpRequests { auth -> auth
                 // Users
-                .requestMatchers("/users/register", "/users/login").permitAll() // Público
+                .requestMatchers("/users/register", "/users/login").permitAll()
+                .requestMatchers(HttpMethod.GET, "/users/{username}").authenticated()
+                .requestMatchers(HttpMethod.GET, "/users/list-users").authenticated()
+                .requestMatchers(HttpMethod.DELETE, "/users/delete").authenticated()
+                .requestMatchers(HttpMethod.PUT, "/users/update").authenticated()
 
                 // Daily Log
-                .requestMatchers(HttpMethod.GET,"/daily-log/new/{email}").authenticated()
+                .requestMatchers(HttpMethod.POST,"/daily-log/new/{email}").authenticated()
+                .requestMatchers(HttpMethod.GET,"/daily-log").authenticated()
+                .requestMatchers(HttpMethod.GET,"/daily-log/user/{userId}").authenticated()
+                .requestMatchers(HttpMethod.GET,"/daily-log/user/{userId}/date/{date}").authenticated()
+                .requestMatchers(HttpMethod.GET,"/daily-log/{id}").authenticated()
+                .requestMatchers(HttpMethod.PUT,"/daily-log/user/{userId}/date/{date}").authenticated()
+                .requestMatchers(HttpMethod.DELETE,"/daily-log/{id}").authenticated()
 
                 //Cycle
                 .requestMatchers(HttpMethod.POST,"/cycle/new").permitAll()
+                .requestMatchers(HttpMethod.GET,"/cycle/user/{email}").permitAll()
+                .requestMatchers(HttpMethod.GET,"/cycle/user/{email}/prediction").permitAll()
+                .requestMatchers(HttpMethod.PUT,"/cycle/update").authenticated()
+                .requestMatchers(HttpMethod.DELETE,"/cycle/{id}").authenticated()
+
+                //Subscription
+                .requestMatchers(HttpMethod.GET,"/pay/create-subscription").hasRole("USER")
 
                 // Otros
                 .anyRequest().permitAll()
@@ -82,9 +99,7 @@ class SecurityConfig {
      */
     @Bean
     fun jwtDecoder(): JwtDecoder {
-        val decoder = NimbusJwtDecoder.withJwkSetUri("dummy").build()
-        decoder.setJwtValidator(JwtValidators.createDefaultWithIssuer("self"))
-        return decoder
+        return NimbusJwtDecoder.withPublicKey(rsaKeys.publicKey).build()
     }
 
 
