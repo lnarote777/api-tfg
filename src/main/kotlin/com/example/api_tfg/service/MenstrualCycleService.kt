@@ -6,6 +6,7 @@ import com.example.api_tfg.model.CyclePhase
 import com.example.api_tfg.model.CyclePhaseDay
 import com.example.api_tfg.model.DailyLog
 import com.example.api_tfg.model.MenstrualCycle
+import com.example.api_tfg.repository.DailyLogRepository
 import com.example.api_tfg.repository.MenstrualCycleRepository
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
@@ -15,6 +16,8 @@ import java.time.LocalDate
 class MenstrualCycleService {
     @Autowired
     private lateinit var menstrualCycleRepository: MenstrualCycleRepository
+    @Autowired
+    private lateinit var dailyLogRepository: DailyLogRepository
 
     fun createCycle(cycleDTO: MenstrualCycleDTO): MenstrualCycle {
         val startDate = LocalDate.parse(cycleDTO.startDate)
@@ -133,24 +136,44 @@ class MenstrualCycleService {
             .sortedByDescending { it.startDate }
 
         val lastCycle = userCycles.firstOrNull() ?: return null
+        val lastCycleStart = LocalDate.parse(lastCycle.startDate)
+        val lastCycleEnd = LocalDate.parse(lastCycle.endDate)
 
-        // Verificar si hoy o ayer tienen sangrado real
-        val hasRecentBleeding = lastCycle.logs.any {
-            val logDate = LocalDate.parse(it.date)
-            (logDate == today || logDate == today.minusDays(1)) && it.hasMenstruation
+        val todayLog = dailyLogRepository.findByUserIdAndDate(userId, today.toString()).orElse(null)
+        val yesterdayLog = dailyLogRepository.findByUserIdAndDate(userId, today.minusDays(1).toString()).orElse(null)
+
+        val hasBleedingToday = todayLog?.hasMenstruation == true
+        val hadBleedingYesterday = yesterdayLog?.hasMenstruation == true
+
+        val isInCurrentCycle = today in lastCycleStart..lastCycleEnd
+
+        // Si hay sangrado hoy, no tocar ciclo real ni predicción, sólo retornar el ciclo actual
+        if (hasBleedingToday && isInCurrentCycle && !lastCycle.isPredicted) {
+            return lastCycle
         }
 
-        val todayInCurrentCycle = today.isAfter(LocalDate.parse(lastCycle.startDate).minusDays(1)) &&
-                today.isBefore(LocalDate.parse(lastCycle.endDate).plusDays(1))
+        // Si no hay sangrado hoy pero sí ayer y estamos dentro del ciclo real, ajustamos sólo fase menstruación
+        if (!hasBleedingToday && hadBleedingYesterday && isInCurrentCycle && !lastCycle.isPredicted) {
+            val updatedPhases = lastCycle.phases.map {
+                if (it.phase == CyclePhase.MENSTRUATION && LocalDate.parse(it.date) >= today) {
+                    // terminamos menstruación el día anterior a hoy
+                    it.copy(phase = CyclePhase.FOLLICULAR) // o una fase neutra para el resto
+                } else it
+            }
 
-        if (todayInCurrentCycle && !lastCycle.isPredicted) {
-            return null // Ya hay un ciclo real que abarca hoy, no recalcular
+            val updatedCycle = lastCycle.copy(phases = updatedPhases)
+            return menstrualCycleRepository.save(updatedCycle)
         }
 
+        // Si estamos dentro de un ciclo real sin predicción y no aplican casos anteriores, no recalcular nada
+        if (isInCurrentCycle && !lastCycle.isPredicted) {
+            return lastCycle
+        }
+
+        // Si no hay sangrado reciente, eliminar predicciones y crear nuevo ciclo predicho
         deletePredictedCyclesForUser(userId)
 
-        // Si hay sangrado hoy o ayer, empieza hoy, si no, empieza mañana
-        val newStart = if (hasRecentBleeding) today else today.plusDays(1)
+        val newStart = if (hadBleedingYesterday || hasBleedingToday) today else today.plusDays(1)
         val newEnd = newStart.plusDays(lastCycle.cycleLength.toLong() - 1)
 
         val newPhases = generatePhasesForCycle(
@@ -165,7 +188,7 @@ class MenstrualCycleService {
             endDate = newEnd.toString(),
             phases = newPhases,
             isPredicted = true,
-            logs = emptyList() // Vacío si es predicción
+            logs = emptyList()
         )
 
         return menstrualCycleRepository.save(newCycle)
