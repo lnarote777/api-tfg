@@ -2,9 +2,12 @@ package com.example.api_tfg.pruebasUnitarias.services
 
 import com.example.api_tfg.dto.MenstrualCycleDTO
 import com.example.api_tfg.model.CyclePhase
+import com.example.api_tfg.model.DailyLog
 import com.example.api_tfg.model.MenstrualCycle
 import com.example.api_tfg.model.MenstrualFlowLevel
+import com.example.api_tfg.repository.DailyLogRepository
 import com.example.api_tfg.repository.MenstrualCycleRepository
+import com.example.api_tfg.service.DailyLogService
 import com.example.api_tfg.service.MenstrualCycleService
 import com.mongodb.assertions.Assertions.assertFalse
 import io.mockk.*
@@ -19,15 +22,20 @@ class MenstrualCycleServiceTest {
 
     private lateinit var menstrualCycleRepository: MenstrualCycleRepository
     private lateinit var service: MenstrualCycleService
+    private lateinit var dailyLogRepository: DailyLogRepository
 
     @BeforeEach
     fun setup() {
         menstrualCycleRepository = mockk(relaxed = true)
+        dailyLogRepository = mockk(relaxed = true)
         service = MenstrualCycleService()
         service.apply {
             this::class.java.getDeclaredField("menstrualCycleRepository")
                 .apply { isAccessible = true }
                 .set(this, menstrualCycleRepository)
+            this::class.java.getDeclaredField("dailyLogRepository")
+                .apply { isAccessible = true }
+                .set(this, dailyLogRepository)
         }
     }
 
@@ -140,7 +148,7 @@ class MenstrualCycleServiceTest {
     }
 
     @Test
-    fun `recalculateCycleIfNoBleeding should return a new predicted cycle`() {
+    fun `recalculateCycleIfNoBleeding should return a new predicted cycle when no bleeding logs`() {
         val userId = "user@example.com"
         val today = LocalDate.of(2025, 6, 10)
         val lastCycle = MenstrualCycle(
@@ -154,16 +162,55 @@ class MenstrualCycleServiceTest {
             logs = emptyList(),
             phases = emptyList()
         )
+
         every { menstrualCycleRepository.findByUserId(userId) } returns listOf(lastCycle)
+        every { dailyLogRepository.findByUserIdAndDate(userId, today.toString()) } returns java.util.Optional.empty()
+        every { dailyLogRepository.findByUserIdAndDate(userId, today.minusDays(1).toString()) } returns java.util.Optional.empty()
+        every { menstrualCycleRepository.deleteAll(any()) } just Runs
         every { menstrualCycleRepository.save(any()) } answers { firstArg() }
 
         val result = service.recalculateCycleIfNoBleeding(userId, today)
 
         assertNotNull(result)
         assertTrue(result.isPredicted)
+        // Empieza el día siguiente a hoy porque no hay sangrado hoy ni ayer
         assertEquals(today.plusDays(1).toString(), result.startDate)
     }
 
+    @Test
+    fun `recalculateCycleIfNoBleeding should return last cycle if bleeding today and in current real cycle`() {
+        val userId = "user@example.com"
+        val today = LocalDate.of(2025, 6, 10)
+        val lastCycle = MenstrualCycle(
+            userId = userId,
+            startDate = "2025-06-01",
+            endDate = "2025-06-28",
+            cycleLength = 28,
+            bleedingDuration = 5,
+            averageFlow = MenstrualFlowLevel.MODERATE,
+            isPredicted = false,
+            logs = emptyList(),
+            phases = emptyList()
+        )
+
+        every { menstrualCycleRepository.findByUserId(userId) } returns listOf(lastCycle)
+        every { dailyLogRepository.findByUserIdAndDate(userId, today.toString()) } returns java.util.Optional.of(
+            DailyLog(userId = userId,
+                date = today.toString() ,
+                hasMenstruation = true)
+        )
+        every { dailyLogRepository.findByUserIdAndDate(userId, today.minusDays(1).toString()) } returns java.util.Optional.of(
+            DailyLog(userId = userId,
+                date =  today.minusDays(1).toString(),
+                hasMenstruation = false)
+        )
+
+        val result = service.recalculateCycleIfNoBleeding(userId, today)
+
+        assertNotNull(result)
+        assertFalse(result.isPredicted)
+        assertEquals(lastCycle.startDate, result.startDate)
+    }
     @Test
     fun `deletePredictedCyclesForUser should delete predicted cycles`() {
         val userId = "user@example.com"

@@ -8,12 +8,16 @@ import com.example.api_tfg.model.DailyLog
 import com.example.api_tfg.model.MenstrualCycle
 import com.example.api_tfg.repository.DailyLogRepository
 import com.example.api_tfg.repository.MenstrualCycleRepository
+import com.example.api_tfg.repository.UserRepository
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import java.time.LocalDate
 
 @Service
 class MenstrualCycleService {
+    @Autowired
+    private lateinit var userRepository: UserRepository
+
     @Autowired
     private lateinit var menstrualCycleRepository: MenstrualCycleRepository
     @Autowired
@@ -39,6 +43,7 @@ class MenstrualCycleService {
     }
 
     fun getCyclesByUserEmail(email: String): List<MenstrualCycle> {
+        userRepository.findUserBy_id(email).orElseThrow { NotFoundException("No se encontró nigun usuario con el email: $email") }
         return menstrualCycleRepository.findByUserId(email)
     }
 
