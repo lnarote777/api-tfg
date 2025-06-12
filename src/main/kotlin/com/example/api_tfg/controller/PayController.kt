@@ -22,6 +22,17 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RequestMapping
 
+/**
+ * Controlador que gestiona las operaciones relacionadas con pagos y suscripciones mediante Stripe.
+ *
+ * @property stripeSecretKey Clave secreta de Stripe para autenticación de la API.
+ * @property successUrl URL a la que se redirige tras un pago exitoso.
+ * @property cancelUrl URL a la que se redirige tras cancelar el pago.
+ * @property endpointSecret Secreto para verificar la firma de los webhooks de Stripe.
+ * @property monthlyPriceId ID de precio de Stripe para suscripción mensual.
+ * @property oneTimePriceId ID de precio de Stripe para pago único.
+ * @property userRepository Repositorio para acceso y actualización de usuarios.
+ */
 @Controller
 @RequestMapping("/pay")
 class PayController(
@@ -47,6 +58,13 @@ class PayController(
     init {
         Stripe.apiKey = stripeSecretKey
     }
+
+    /**
+     * Crea una sesión de suscripción o pago único en Stripe y devuelve la URL para redirigir al checkout.
+     *
+     * @param request Datos de la suscripción, incluyendo el tipo y email del usuario.
+     * @return Mapa con la URL de la sesión de pago de Stripe para la redirección.
+     */
     @PostMapping("/create-subscription")
     fun createSubscription(@RequestBody request: Subscription): ResponseEntity<Map<String, String>>{
         println("Success URL: $successUrl")
@@ -77,6 +95,15 @@ class PayController(
         val session = Session.create(params)
         return ResponseEntity.ok(mapOf("url" to session.url))
     }
+
+    /**
+     * Controlador que recibe y procesa los webhooks enviados por Stripe.
+     * Verifica la firma, procesa eventos tipo 'checkout.session.completed' y actualiza el rol del usuario a PREMIUM.
+     *
+     * @param payload Cuerpo JSON del webhook enviado por Stripe.
+     * @param request Petición HTTP para obtener cabeceras (firma).
+     * @return Respuesta HTTP con estado según el resultado del procesamiento.
+     */
     @PostMapping("/webhook")
     fun handleStripeWebhook(@RequestBody payload: String, request: HttpServletRequest): ResponseEntity<String> {
         val sigHeader = request.getHeader("Stripe-Signature") ?: return ResponseEntity.badRequest().body("Falta la firma")
@@ -108,6 +135,12 @@ class PayController(
         return ResponseEntity.ok("Evento procesado correctamente")
     }
 
+    /**
+     * Extrae la sesión de checkout de Stripe del evento recibido.
+     *
+     * @param event Evento recibido en el webhook de Stripe.
+     * @return Objeto [Session] si la extracción fue exitosa, o null en caso contrario.
+     */
     private fun extractSession(event: Event): Session? {
         val deserializer = event.dataObjectDeserializer
         return if (deserializer.`object`.isPresent) {

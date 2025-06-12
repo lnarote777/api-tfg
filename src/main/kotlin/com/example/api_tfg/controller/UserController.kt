@@ -19,6 +19,16 @@ import org.springframework.security.core.AuthenticationException
 import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.*
 
+/**
+ * Controlador REST para la gestión de usuarios.
+ *
+ * Proporciona endpoints para autenticación (login), registro,
+ * consulta, actualización y eliminación de usuarios.
+ *
+ * @property authenticationManager Componente para la autenticación de usuarios.
+ * @property tokenService Servicio para generación de tokens JWT.
+ * @property userService Servicio con la lógica de negocio de usuarios.
+ */
 @Controller
 @RequestMapping("/users")
 class UserController(
@@ -27,6 +37,14 @@ class UserController(
     private val userService: UserService
 ) {
 
+    /**
+     * Endpoint para el inicio de sesión de usuarios.
+     *
+     * @param user DTO con username y password para autenticación.
+     * @throws BadRequestException si el parámetro user es nulo.
+     * @throws UnauthorizedException si las credenciales son incorrectas.
+     * @return ResponseEntity con un mapa que contiene el token JWT generado.
+     */
     @PostMapping("/login")
     fun login(@RequestBody user: UserLoginDTO?) : ResponseEntity<Any>? {
         if(user == null){
@@ -45,6 +63,13 @@ class UserController(
         return ResponseEntity(mapOf("token" to token), HttpStatus.OK)
     }
 
+    /**
+     * Endpoint para registrar un nuevo usuario.
+     *
+     * @param httpRequest Solicitud HTTP entrante.
+     * @param userInsertDTO DTO con los datos necesarios para registrar un usuario.
+     * @return ResponseEntity con el usuario creado.
+     */
     @PostMapping("/register")
     fun insert(
         httpRequest: HttpServletRequest,
@@ -54,6 +79,12 @@ class UserController(
         return ResponseEntity(user, HttpStatus.CREATED)
     }
 
+    /**
+     * Obtiene la lista de todos los usuarios registrados.
+     *
+     * @param httpRequest Solicitud HTTP entrante.
+     * @return ResponseEntity con la lista de usuarios en formato DTO.
+     */
     @GetMapping("/list-users")
     fun getAllUsers(
         httpRequest: HttpServletRequest
@@ -62,6 +93,13 @@ class UserController(
         return ResponseEntity(users, HttpStatus.OK )
     }
 
+    /**
+     * Obtiene un usuario por su nombre de usuario.
+     *
+     * @param username Nombre de usuario a buscar.
+     * @param httpRequest Solicitud HTTP entrante.
+     * @return ResponseEntity con el usuario encontrado.
+     */
     @GetMapping("/{username}")
     fun getUserByUsername(
         @PathVariable username: String,
@@ -71,6 +109,13 @@ class UserController(
         return ResponseEntity(user, HttpStatus.OK)
     }
 
+    /**
+     * Elimina un usuario identificado por su email.
+     *
+     * @param email Email del usuario a eliminar.
+     * @param httpRequest Solicitud HTTP entrante.
+     * @return ResponseEntity con el usuario eliminado.
+     */
     @DeleteMapping("/delete")
     fun deleteByEmail(
         @RequestParam email: String,
@@ -80,6 +125,13 @@ class UserController(
         return ResponseEntity(user, HttpStatus.OK)
     }
 
+    /**
+     * Actualiza los datos de un usuario existente.
+     *
+     * @param usuarioUpdated DTO con los datos actualizados del usuario.
+     * @param httpRequest Solicitud HTTP entrante.
+     * @return ResponseEntity con el usuario actualizado.
+     */
     @PutMapping("/update")
     fun update(
         @RequestBody usuarioUpdated: UserUpdateDTO,

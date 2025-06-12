@@ -23,6 +23,13 @@ class MenstrualCycleService {
     @Autowired
     private lateinit var dailyLogRepository: DailyLogRepository
 
+    /**
+     * Crea un nuevo ciclo menstrual a partir del DTO proporcionado.
+     * Calcula las fases del ciclo basándose en la fecha de inicio, duración del ciclo y duración del sangrado.
+     *
+     * @param cycleDTO DTO con los datos necesarios para crear el ciclo.
+     * @return El ciclo menstrual guardado en la base de datos.
+     */
     fun createCycle(cycleDTO: MenstrualCycleDTO): MenstrualCycle {
         val startDate = LocalDate.parse(cycleDTO.startDate)
         val endDate = startDate.plusDays(cycleDTO.cycleLength.toLong() - 1)
@@ -42,11 +49,26 @@ class MenstrualCycleService {
         return menstrualCycleRepository.save(cycle)
     }
 
+    /**
+     * Obtiene todos los ciclos menstruales asociados a un usuario, dado su email.
+     *
+     * @param email Email del usuario.
+     * @return Lista de ciclos menstruales del usuario.
+     * @throws NotFoundException si no se encuentra el usuario.
+     */
     fun getCyclesByUserEmail(email: String): List<MenstrualCycle> {
         userRepository.findUserBy_id(email).orElseThrow { NotFoundException("No se encontró nigun usuario con el email: $email") }
         return menstrualCycleRepository.findByUserId(email)
     }
 
+    /**
+     * Genera predicciones de los próximos 6 ciclos menstruales basándose en el último ciclo confirmado.
+     * Elimina previamente cualquier ciclo predicho existente para ese usuario.
+     *
+     * @param email Email del usuario para el cual se predicen los ciclos.
+     * @return Lista de ciclos predichos guardados en la base de datos.
+     * @throws NotFoundException si el usuario no tiene ciclos previos.
+     */
     fun predictNextCycle(email: String): MutableList<MenstrualCycle?> {
         deletePredictedCyclesForUser(email)
         val lastCycle = menstrualCycleRepository.findTopByUserIdOrderByStartDateDesc(email)
@@ -84,6 +106,15 @@ class MenstrualCycleService {
         return menstrualCycleRepository.saveAll(predictedCycles)
     }
 
+    /**
+     * Genera la lista de fases diarias del ciclo menstrual, asignando la fase correspondiente
+     * a cada día según la duración del ciclo y de la menstruación.
+     *
+     * @param startDate Fecha de inicio del ciclo.
+     * @param cycleLength Duración total del ciclo en días.
+     * @param bleedingDuration Duración del periodo menstrual (sangrado) en días.
+     * @return Lista de objetos CyclePhaseDay que representan cada día y su fase correspondiente.
+     */
     fun generatePhasesForCycle(startDate: LocalDate, cycleLength: Int, bleedingDuration: Int): List<CyclePhaseDay> {
         val phases = mutableListOf<CyclePhaseDay>()
 
@@ -101,6 +132,14 @@ class MenstrualCycleService {
         return phases
     }
 
+    /**
+     * Actualiza un ciclo menstrual existente con los nuevos datos proporcionados.
+     * Genera nuevamente las fases del ciclo basándose en la nueva información.
+     *
+     * @param cycle Objeto MenstrualCycle con los datos actualizados.
+     * @return El ciclo menstrual actualizado y guardado en la base de datos.
+     * @throws NotFoundException si no existe un ciclo con el id proporcionado.
+     */
     fun updateCycle(cycle: MenstrualCycle): MenstrualCycle {
         val existing = cycle.id?.let {
             menstrualCycleRepository.findById(it)
@@ -124,6 +163,13 @@ class MenstrualCycleService {
         return menstrualCycleRepository.save(updatedCycle)
     }
 
+    /**
+     * Elimina un ciclo menstrual por su id.
+     *
+     * @param id Identificador del ciclo a eliminar.
+     * @return true si se eliminó correctamente, false si ocurrió algún error.
+     * @throws NotFoundException si no existe un ciclo con el id proporcionado.
+     */
     fun deleteCycle(id: String): Boolean {
         try {
             if (!menstrualCycleRepository.existsById(id)) {
@@ -136,6 +182,15 @@ class MenstrualCycleService {
         }
 
     }
+
+    /**
+     * Recalcula el ciclo menstrual para un usuario si no hay sangrado el día actual.
+     * Actualiza fases y crea ciclos predichos en caso necesario.
+     *
+     * @param userId ID del usuario.
+     * @param today Fecha actual para evaluar la recalculación.
+     * @return El ciclo menstrual actualizado o predicho, o null si no existen ciclos previos.
+     */
     fun recalculateCycleIfNoBleeding(userId: String, today: LocalDate): MenstrualCycle? {
         val userCycles = menstrualCycleRepository.findByUserId(userId)
             .sortedByDescending { it.startDate }
@@ -199,6 +254,11 @@ class MenstrualCycleService {
         return menstrualCycleRepository.save(newCycle)
     }
 
+    /**
+     * Elimina todos los ciclos predichos de un usuario.
+     *
+     * @param userId ID del usuario.
+     */
     fun deletePredictedCyclesForUser(userId: String) {
         val predicted = menstrualCycleRepository.findByUserId(userId)
             .filter { it.isPredicted }

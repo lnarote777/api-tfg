@@ -10,11 +10,29 @@ import java.time.Duration
 import java.time.Instant
 import java.util.*
 
+/**
+ * Servicio para generar tokens JWT para usuarios autenticados.
+ *
+ * @property jwtEncoder Componente encargado de codificar y firmar el token JWT.
+ */
 @Service
 class TokenService(
     @Autowired val jwtEncoder: JwtEncoder
 ) {
 
+    /**
+     * Genera un token JWT a partir de la información de autenticación del usuario.
+     *
+     * El token incluye:
+     * - El emisor (issuer) como "self".
+     * - La fecha y hora de emisión.
+     * - La fecha de expiración, configurada a 365 días a partir de la emisión.
+     * - El nombre de usuario (subject).
+     * - Los roles del usuario en un claim llamado "roles".
+     *
+     * @param authentication Información de autenticación proporcionada por Spring Security.
+     * @return El token JWT como cadena.
+     */
     fun generarToken(authentication: Authentication) : String {
 
         println(authentication.authorities)

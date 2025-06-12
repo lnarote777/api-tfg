@@ -21,6 +21,12 @@ import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.oauth2.jwt.*
 import org.springframework.security.web.SecurityFilterChain
 
+/**
+ * Configuración de seguridad para la aplicación utilizando Spring Security.
+ *
+ * Define reglas de acceso, métodos de autenticación, generación y validación de JWT,
+ * y configuración del cifrado de contraseñas.
+ */
 @Configuration
 @EnableWebSecurity
 class SecurityConfig {
@@ -28,6 +34,18 @@ class SecurityConfig {
     @Autowired
     private lateinit var rsaKeys: RSAKeysProperties
 
+    /**
+     * Define el filtro de seguridad HTTP con reglas para cada endpoint.
+     *
+     * - Deshabilita CSRF.
+     * - Define rutas públicas y protegidas.
+     * - Configura OAuth2 Resource Server con JWT.
+     * - Configura la política de sesiones como stateless (sin sesión).
+     * - Habilita autenticación básica HTTP.
+     *
+     * @param http Objeto para construir la configuración HTTP.
+     * @return Cadena de filtros de seguridad configurada.
+     */
     @Bean
     fun securityFilterChain(http: HttpSecurity) : SecurityFilterChain {
 
@@ -71,21 +89,33 @@ class SecurityConfig {
 
     }
 
+    /**
+     * Bean para cifrar contraseñas con BCrypt.
+     *
+     * @return PasswordEncoder configurado con BCrypt.
+     */
     @Bean
     fun passwordEncoder() : PasswordEncoder {
         return BCryptPasswordEncoder()
     }
 
     /**
-     * Método que inicializa un objeto de tipo AuthenticationManager
+     * Bean para obtener el AuthenticationManager que maneja la autenticación.
+     *
+     * @param authenticationConfiguration Configuración de autenticación de Spring.
+     * @return AuthenticationManager para manejar autenticación.
      */
     @Bean
     fun authenticationManager(authenticationConfiguration: AuthenticationConfiguration) : AuthenticationManager {
         return authenticationConfiguration.authenticationManager
     }
 
-    /*
-    MÉTODO PARA CODIFICAR UN JWT
+    /**
+     * Configura el encoder JWT con las claves RSA.
+     *
+     * Usa la clave privada para firmar los JWT.
+     *
+     * @return JwtEncoder configurado para firmar tokens.
      */
     @Bean
     fun jwtEncoder(): JwtEncoder {
@@ -94,8 +124,10 @@ class SecurityConfig {
         return NimbusJwtEncoder(jwks)
     }
 
-    /*
-    MÉTODO PARA DECODIFICAR UN JWT
+    /**
+     * Configura el decoder JWT para verificar tokens con la clave pública.
+     *
+     * @return JwtDecoder configurado para validar tokens firmados.
      */
     @Bean
     fun jwtDecoder(): JwtDecoder {
